@@ -3,6 +3,7 @@ package store
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"strconv"
 
 	"github.com/gogo/protobuf/proto"
@@ -284,10 +285,13 @@ func (bs *BlockStore) LoadBlockCommit(height int64) *types.Commit {
 // commit in its block.LastCommit.
 func (bs *BlockStore) LoadSeenCommit() *types.Commit {
 	var pbc = new(tmproto.Commit)
-	bz, err := bs.db.Get(seenCommitKey())
+	k := seenCommitKey()
+	log.Printf("MJF :: LoadSeenCommit key=%+v", k)
+	bz, err := bs.db.Get(k)
 	if err != nil {
 		panic(err)
 	}
+	log.Printf("MJF :: bz=%+v", bz)
 	if len(bz) == 0 {
 		return nil
 	}
