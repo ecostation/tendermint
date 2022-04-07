@@ -50,6 +50,13 @@ get_transaction() {
     call tx "hash=0x${hash}" | jq -r '.result.tx|@base64d'
 }
 
+check_txn() {
+    diag "Checking transactions..."
+    for h in "$@" ; do
+        diag ":: hash $h: " "$(get_transaction "$h")"
+    done
+}
+
 diag() { echo "-- $@" 1>&2; }
 
 diag "Installing Tendermint CLI"
@@ -76,11 +83,7 @@ diag ":: transaction hash is $hash2"
 hash3="$(put_transaction t3 charlie)"
 diag ":: transaction hash is $hash3"
 
-
-diag "Checking transactions..."
-for h in "$hash1" "$hash2" "$hash3" ; do
-    diag ":: hash $h: " "$(get_transaction "$h")"
-done
+check_txn "$hash1" "$hash2" "$hash3"
 
 diag "Height now:" "$(call blockchain | jq -r .result.last_height)"
 
@@ -108,5 +111,7 @@ diag "Starting TM node $usevers"
                  --proxy-app=kvstore \
                  --consensus.create-empty-blocks=0 &
 sleep 2
+
+check_txn "$hash1" "$hash2" "$hash3"
 
 kill %1; wait
