@@ -124,8 +124,7 @@ func main() {
 	}
 	defer out.Cancel()
 
-	var opt tomledit.Formatter
-	if err := opt.Format(out, doc); err != nil {
+	if err := tomledit.Format(out, doc); err != nil {
 		log.Fatalf("Writing config: %v", err)
 	} else if err := out.Close(); err != nil {
 		log.Fatalf("Closing output: %v", err)
