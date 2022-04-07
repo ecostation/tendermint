@@ -135,6 +135,24 @@ func main() {
 		log.Fatalf("Loading config: %v", err)
 	}
 
+	// Check what version of Tendermint might have created this config file, as
+	// a safety check for the updates we are about to make.
+	tmVersion := guessConfigVersion(doc)
+	if tmVersion == "" {
+		fmt.Fprintf(os.Stderr, "Sorry, I am not able to update %q, "+
+			"because I cannot tell which version of Tendermint created it.\n", *configPath)
+		os.Exit(3)
+	}
+
+	fmt.Fprintf(os.Stderr, "-- This config appears to have been created by Tendermint %s\n", tmVersion)
+	if tmVersion < "v0.34" {
+		// TODO(creachadair): Add in rewrites for older versions.  This will
+		// require some digging to discover what the changes were.  The upgrade
+		// instructions do not give specifics.
+		fmt.Fprintf(os.Stderr, "Sorry, I do not know how to update a %s config yet.\n", tmVersion)
+		os.Exit(3)
+	}
+
 	ctx := transform.WithLogWriter(context.Background(), os.Stderr)
 	if err := plan.Apply(ctx, doc); err != nil {
 		log.Fatalf("Editing config: %v", err)
@@ -160,4 +178,37 @@ func loadConfig(path string) (*tomledit.Document, error) {
 	}
 	defer f.Close()
 	return tomledit.Parse(f)
+}
+
+// guessConfigVersion attempts to figure out which version of Tendermint
+// created the specified config document. It returns "" if the creating version
+// cannot be determined, otherwise a string of the form "vX.YY".
+func guessConfigVersion(doc *tomledit.Document) string {
+	hasDisableWS := doc.First("rpc", "experimental-disable-websocket") != nil
+	hasUseLegacy := doc.First("p2p", "use-legacy") != nil // v0.35 only
+	if hasDisableWS && !hasUseLegacy {
+		return "v0.36"
+	}
+
+	hasBlockSync := transform.FindTable(doc, "blocksync") != nil // add: v0.35
+	hasStateSync := transform.FindTable(doc, "statesync") != nil // add: v0.34
+	if hasBlockSync && hasStateSync {
+		return "v0.35"
+	} else if hasStateSync {
+		return "v0.34"
+	}
+
+	hasIndexKeys := doc.First("tx_index", "index_keys") != nil // add: v0.33
+	hasIndexTags := doc.First("tx_index", "index_tags") != nil // rem: v0.33
+	if hasIndexKeys && !hasIndexTags {
+		return "v0.33"
+	}
+
+	hasFastSync := transform.FindTable(doc, "fastsync") != nil // add: v0.32
+	if hasIndexTags && hasFastSync {
+		return "v0.32"
+	}
+
+	// Something older, probably.
+	return ""
 }
