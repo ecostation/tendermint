@@ -79,7 +79,16 @@ sed -i'' -e '/^\[fastsync\]$/c\
 diag "Migrating databases with $newvers"
 ./bin/tendermint-"$newvers" --home="$tmhome" key-migrate
 
-diag "Starting TM $newvers"
+diag "Starting TM inspector for $newvers"
+./bin/tendermint-"$newvers" --home="$tmhome" inspect &
+sleep 2
+
+diag "Height now:" "$(call blockchain | jq -r .result.last_height)"
+
+diag "Stopping TM inspector $newvers"
+kill %1; wait
+
+diag "Starting TM node $newvers"
 ./bin/tendermint-"$newvers" --home="$tmhome" start \
 		 --proxy-app=kvstore \
 		 --consensus.create-empty-blocks=0 &
