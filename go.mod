@@ -215,5 +215,6 @@ require (
 	mvdan.cc/interfacer v0.0.0-20180901003855-c20040233aed // indirect
 	mvdan.cc/lint v0.0.0-20170908181259-adc824a0674b // indirect
 	mvdan.cc/unparam v0.0.0-20211214103731-d0ef000c54e5 // indirect
+	github.com/creachadair/taskgroup v0.3.2
 	github.com/creachadair/tomledit v0.0.3
 )

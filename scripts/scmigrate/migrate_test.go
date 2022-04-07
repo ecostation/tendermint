@@ -104,15 +104,6 @@ func TestMigrations(t *testing.T) {
 			assertWellOrderedMigrations(t, testData)
 		})
 	})
-	t.Run("GetMigrationsToDelete", func(t *testing.T) {
-		for i := 1; i < 100; i++ {
-			data := appendRandomMigrations([]toMigrate{}, i)
-			toMigrate := getMigrationsToDelete(data)
-			if len(data) != len(toMigrate)+1 {
-				t.Fatalf("migration prep did not save one document [original=%d migrations=%d]", len(data), len(toMigrate))
-			}
-		}
-	})
 	t.Run("InvalidMigrations", func(t *testing.T) {
 		if _, err := makeToMigrate(nil); err == nil {
 			t.Fatal("should error for nil migrations")
