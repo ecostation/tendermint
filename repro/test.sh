@@ -108,9 +108,8 @@ kill %1; wait
 diag "Starting TM node $usevers"
 ./bin/tendermint-"$usevers" \
                  --home="$tmhome" start \
-                 --proxy-app=kvstore \
-                 --consensus.create-empty-blocks=0 &
-sleep 2
+                 --proxy-app=kvstore &
+sleep 4
 
 check_txn "$hash1" "$hash2" "$hash3"
 
