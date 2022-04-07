@@ -8,7 +8,9 @@ readonly oldvers=v0.34.18
 readonly newvers=v0.35.x
 readonly addr=localhost:26657
 readonly tmhome="$PWD/tmhome"
+readonly cfpath="$tmhome/config/config.toml"
 readonly branch="$(git branch --show-current)"
+readonly usevers="${1:-$newvers}"
 
 mkdir -p bin
 
@@ -22,10 +24,10 @@ install() {
 build_current() {
     set -x; trap 'set +x' RETURN
     (
-	set -x
-	cd "..";
-	make build
-	mv build/tendermint "$root"/bin/tendermint-ambient
+        set -x
+        cd "..";
+        make build
+        mv build/tendermint "$root"/bin/tendermint-ambient
     )
 }
 
@@ -62,8 +64,8 @@ diag "Starting TM $oldvers"
 rm -fr -- "$tmhome"
 ./bin/tendermint-"$oldvers" --home="$tmhome" init
 ./bin/tendermint-"$oldvers" --home="$tmhome" start \
-		 --proxy_app=kvstore \
-		 --consensus.create_empty_blocks=0 2>/dev/null 1>&2 &
+                 --proxy_app=kvstore \
+                 --consensus.create_empty_blocks=0 2>/dev/null 1>&2 &
 sleep 2
 
 diag "Adding transactions..."
@@ -85,30 +87,26 @@ diag "Height now:" "$(call blockchain | jq -r .result.last_height)"
 diag "Stopping TM $oldvers"
 kill %1; wait
 
-diag "Editing [fastsync] to [blocksync]"
-sed -i'' -e '/^\[fastsync\]$/c\
-[blocksync]' "$tmhome/config/config.toml"
+diag "Updating configuration file ${cfpath}..."
+go run ../scripts/confix -config "$cfpath"
 
-diag "Migrating databases with $newvers"
-./bin/tendermint-"$newvers" --home="$tmhome" key-migrate
+diag "Migrating databases with $usevers"
+./bin/tendermint-"$usevers" --home="$tmhome" key-migrate
 
-diag "Starting TM inspector for $newvers"
-./bin/tendermint-"$newvers" --home="$tmhome" inspect &
+diag "Starting TM inspector for $usevers"
+./bin/tendermint-"$usevers" --home="$tmhome" inspect &
 sleep 2
 
 diag "Height now:" "$(call blockchain | jq -r .result.last_height)"
 
-diag "Stopping TM inspector $newvers"
+diag "Stopping TM inspector $usevers"
 kill %1; wait
 
-#diag "Starting TM node $newvers"
-#./bin/tendermint-"$newvers" --home="$tmhome" start \
-#		 --proxy-app=kvstore \
-#		 --consensus.create-empty-blocks=0 &
-diag "Starting TM mode $branch"
-./bin/tendermint-ambient --home="$tmhome" start \
-			 --proxy-app=kvstore \
-			 --consensus.create-empty-blocks=0 &
+diag "Starting TM node $usevers"
+./bin/tendermint-"$usevers" \
+                 --home="$tmhome" start \
+                 --proxy-app=kvstore \
+                 --consensus.create-empty-blocks=0 &
 sleep 2
 
 kill %1; wait
