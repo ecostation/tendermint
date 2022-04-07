@@ -8,6 +8,7 @@ readonly oldvers=v0.34.18
 readonly newvers=v0.35.x
 readonly addr=localhost:26657
 readonly tmhome="$PWD/tmhome"
+readonly branch="$(git branch --show-current)"
 
 mkdir -p bin
 
@@ -21,6 +22,7 @@ install() {
 build_current() {
     set -x; trap 'set +x' RETURN
     (
+	set -x
 	cd "..";
 	make build
 	mv build/tendermint "$root"/bin/tendermint-ambient
@@ -53,7 +55,7 @@ for vers in "$oldvers" "$newvers" ; do
     diag ":: version $vers"
     install "$vers"
 done
-diag ":: ambient $(git branch --show-current)"
+diag ":: ambient $branch"
 build_current
 
 diag "Starting TM $oldvers"
@@ -103,8 +105,8 @@ kill %1; wait
 #./bin/tendermint-"$newvers" --home="$tmhome" start \
 #		 --proxy-app=kvstore \
 #		 --consensus.create-empty-blocks=0 &
-diag "Starting TM mode $(git show --current-branch)"
-./bin/tendermint-ambient --home"$tmhom" start \
+diag "Starting TM mode $branch"
+./bin/tendermint-ambient --home="$tmhome" start \
 			 --proxy-app=kvstore \
 			 --consensus.create-empty-blocks=0 &
 sleep 2
