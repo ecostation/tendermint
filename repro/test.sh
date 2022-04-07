@@ -18,6 +18,15 @@ install() {
     mv bin/tendermint bin/tendermint-"$vers"
 }
 
+build_current() {
+    set -x; trap 'set +x' RETURN
+    (
+	cd "..";
+	make build
+	mv build/tendermint "$root"/bin/tendermint-ambient
+    )
+}
+
 call() {
     local method="$1"
     shift 1
@@ -44,6 +53,8 @@ for vers in "$oldvers" "$newvers" ; do
     diag ":: version $vers"
     install "$vers"
 done
+diag ":: ambient $(git branch --show-current)"
+build_current
 
 diag "Starting TM $oldvers"
 rm -fr -- "$tmhome"
@@ -88,10 +99,14 @@ diag "Height now:" "$(call blockchain | jq -r .result.last_height)"
 diag "Stopping TM inspector $newvers"
 kill %1; wait
 
-diag "Starting TM node $newvers"
-./bin/tendermint-"$newvers" --home="$tmhome" start \
-		 --proxy-app=kvstore \
-		 --consensus.create-empty-blocks=0 &
+#diag "Starting TM node $newvers"
+#./bin/tendermint-"$newvers" --home="$tmhome" start \
+#		 --proxy-app=kvstore \
+#		 --consensus.create-empty-blocks=0 &
+diag "Starting TM mode $(git show --current-branch)"
+./bin/tendermint-ambient --home"$tmhom" start \
+			 --proxy-app=kvstore \
+			 --consensus.create-empty-blocks=0 &
 sleep 2
 
 kill %1; wait
