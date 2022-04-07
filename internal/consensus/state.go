@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	stdlog "log"
+	"io/ioutil"
 	"os"
 	"runtime/debug"
 	"sort"
@@ -698,10 +699,8 @@ func (cs *State) sendInternalMessage(ctx context.Context, mi msgInfo) {
 // (which happens even before saving the state)
 func (cs *State) reconstructLastCommit(state sm.State) {
 	commit := cs.blockStore.LoadSeenCommit()
-	stdlog.Printf("MJF :: load seen commit=%v", commit)
 	if commit == nil || commit.Height != state.LastBlockHeight {
 		commit = cs.blockStore.LoadBlockCommit(state.LastBlockHeight)
-		stdlog.Printf("MJF :: update commit now=%v", commit)
 	}
 
 	if commit == nil {
